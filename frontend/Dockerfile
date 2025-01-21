@@ -8,4 +8,4 @@ EXPOSE 3000
 
 RUN npm install
 
-ENTRYPOINT ["exec", "npm", "run", "dev"]
+ENTRYPOINT ["sh", "-c", "npm run dev"]

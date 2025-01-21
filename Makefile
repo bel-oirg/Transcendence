@@ -1,5 +1,13 @@
 all :  build up
 
+front:
+	cd frontend && docker build -t front:v1 .
+	docker run -p 3000:3000 front:v1
+
+back:
+	cd backend && docker build -t back:v1 .
+	docker run -p 8000:8000 back:v1
+
 build:
 	docker-compose -f compose.yml build
 up :

@@ -20,7 +20,8 @@ class MyAccountManager(BaseUserManager):
     def create_superuser(self, email, username, password):
         user = self.create_user(email=self.normalize_email(email),
                                 username=username,
-                                password=password)
+                                password=password,
+                                )
         user.is_admin = True
         user.is_superuser = True
         user.is_staff = True
@@ -38,9 +39,10 @@ class Account(AbstractBaseUser):
     is_active       = models.BooleanField(default=True)
     date_joined     = models.DateTimeField(auto_now_add=True)
     avatar          = models.ImageField(default='default_avatar.jpg', upload_to='avatars/')
+    is_oauth        = models.BooleanField(default=False)
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email']
 
     objects = MyAccountManager()
 

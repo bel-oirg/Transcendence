@@ -6,4 +6,6 @@ WORKDIR /root/
 
 COPY . .
 
-ENTRYPOINT ["exec", "bash", "start_back.sh"]
+RUN chmod +x start_back.sh
+
+ENTRYPOINT ["sh", "./start_back.sh"]

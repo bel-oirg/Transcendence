@@ -13,20 +13,22 @@ class MyJWTAuthentication(JWTAuthentication):
         except:
             return (None)
         return (user, validated_token)
-        
 
-"""Overriding authenticate method on JWTAuthentication
+from django.contrib.auth.backends import ModelBackend
+from .models import Account
 
-    def authenticate(self, request: Request) -> Optional[Tuple[AuthUser, Token]]:
-        header = self.get_header(request)
-        if header is None:
-            return None
-
-        raw_token = self.get_raw_token(header)
-        if raw_token is None:
-            return None
-
-        validated_token = self.get_validated_token(raw_token)
-
-        return self.get_user(validated_token), validated_token
-"""
+class emailORusername(ModelBackend):
+    def authenticate(self, request, username=None, password=None, **kwargs):
+        if '@' in username:
+            try:
+                user = Account.objects.get(email=username)
+            except:
+                return None
+        else:
+            try:
+                user = Account.objects.get(username=username)
+            except:
+                return None
+        if user.check_password(password):
+            return user
+        return None

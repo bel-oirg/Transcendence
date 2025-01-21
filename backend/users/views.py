@@ -42,17 +42,16 @@ class MyTokenObtainPairView(TokenObtainPairView):
             response = super().post(request, *args, **kwargs)
             access_token = response.data['access']
             refresh_token = response.data['refresh']
-            res = Response()
-            res.data = {'Success':True, 'access':access_token, 'refresh':refresh_token}
-
-            return res
+            return Response({'Success':True,
+                             'access':access_token,
+                             'refresh':refresh_token},
+                             status=200)
         except:
-            return(Response({'success':False}))
+            return(Response({'success':False}, status=401))
 
 
 class MyTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
-
         try:
             refresh_token = request.COOKIES.get('refresh_token')
             request.data['refresh'] = refresh_token
@@ -210,37 +209,40 @@ def oauth2_42_callback(request):
         return(Response())
 
     decoded = response_42.json()
+    tmp_email = decoded.get('email', '')
+    tmp_username = decoded.get('login', '')
+
+    user_mail = Account.objects.filter(email=tmp_email).first() or ''
+    user_username = Account.objects.filter(username=tmp_username).first() or ''
+    user_obj = None
+
     try:
-        user = Account.objects.get(email=decoded['email'])
+        if user_mail.id == user_username.id:
+            if (user_mail):
+                if (not user_mail.is_oauth):
+                    return (Response('Please use the login form.', status=403))
+                else:
+                    user_obj = user_mail
+            else:
+                print('inside second else')
+                img = decoded['image']['versions']['medium']
+                img = unquote(img[7:]) #removing /media/
+                user_obj = Account(email=tmp_email,
+                            username=tmp_username,
+                            first_name=decoded['first_name'],
+                            last_name=decoded['last_name'],
+                            avatar=img,
+                            is_oauth=True,
+                            )
+                user_obj.save()
+        else:
+            return (Response('Please use the login form.', status=401))
     except:
-        img = decoded['image']['versions']['medium']
-        img = unquote(img[7:]) #removing /media/
-        user = Account(email=decoded['email'],
-                       username=decoded['login'],
-                       first_name=decoded['first_name'],
-                       last_name=decoded['last_name'],
-                       avatar=img,
-                       )
-        user.save()
-    refresh_token = RefreshToken.for_user(user)
-    access_token = AccessToken.for_user(user)
+        return (Response('Catched err on 42 oauth', status=401))
 
-    res = Response()
-    res.data = {'Success':True, 'access_token':str(access_token), 'refresh_token':str(refresh_token)}
+    refresh_token = RefreshToken.for_user(user_obj)
+    access_token = AccessToken.for_user(user_obj)
 
-    res.set_cookie(
-        key='access_token',
-        value=access_token,
-        httponly=True,
-        secure=True, 
-        samesite='None',
-        path='/' 
-    )
-    res.set_cookie(
-        key='refresh_token',
-        value=refresh_token,
-        secure=True,
-        httponly=True,
-        path='/'
-    )
-    return res
+    return Response({'Success':True,
+                     'access_token':str(access_token),
+                     'refresh_token':str(refresh_token)})
